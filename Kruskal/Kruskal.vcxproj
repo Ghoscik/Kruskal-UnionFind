@@ -132,6 +132,7 @@
   <ItemGroup>
     <ClInclude Include="Dlist.h" />
     <ClInclude Include="Edge.h" />
+    <ClInclude Include="hConsole.h" />
     <ClInclude Include="Kruskal.h" />
     <ClInclude Include="UnionFind.h" />
   </ItemGroup>

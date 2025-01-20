@@ -4,54 +4,96 @@
 
 #include <iostream>
 #include <algorithm>
-#include <vector>
+#include <fstream>
+#include <chrono>
 
 #include "Dlist.h"
 #include "UnionFind.h"
 #include "Edge.h"
 
-#define gEdge pair<double, vector<Edge>>
+#define gEdge pair<double, Dlist<Edge>>
 
 using namespace std;
+using namespace std::chrono;
 
 class Graph {
 private:
-    std::vector<Edge> graph;
-    std::vector<Edge> MST;
-    UnionFind uf;
-    int nCount;
+    Dlist<Edge> graph;
+    gEdge MST;
+    UnionFind onion;
+    uint64_t nCount, eCount;
 
 public:
 
-    Graph(int nCount) : uf(nCount), nCount(nCount) {}
+    Graph(uint64_t nCount) : onion(nCount), nCount(nCount), eCount(0) {}
+    Graph(Dlist<Edge> graph, uint64_t nodes, uint64_t edges) : graph(graph), nCount(nodes), eCount(edges), onion(nodes) { }
+
+    ~Graph() 
+    {
+        onion, graph = NULL;
+        nCount, eCount = 0;
+    }
 
     void addEdge(const Edge& edge) 
     {
-        graph.push_back(edge);
+        graph.push(edge);
     }
 
+    uint64_t getFinds() { return onion.getFinds(); }
 
     void makeMST() 
     {
-        std::sort(graph.begin(), graph.end(), [](const Edge& a, const Edge& b) { return a.weight < b.weight; });
+        cout << "For sorting: \t";
+        auto start = high_resolution_clock::now();
+        sort(graph.begin(), graph.end());
+        handleTime(start);
 
-        for (const auto& edge : graph) 
+        double totalWeight = 0;
+
+        cout << "For main loop: ";
+        start = high_resolution_clock::now();
+        for (auto& edge : graph) 
         {
-            int uRep = uf.find(edge.u);
-            int vRep = uf.find(edge.v);
+            int uRep = onion.find(edge.u);
+            int vRep = onion.find(edge.v);
 
             if (uRep != vRep) 
             {
-                MST.push_back(edge);
-                uf.unite(uRep, vRep);
+                MST.second.push(edge);
+                onion.unite(uRep, vRep);
+                totalWeight += edge.weight;
             }
         }
+        handleTime(start);
+
+        MST.first = totalWeight;
+
+        cout << "Total find calls: \033[33m \t" << onion.getFinds() << "\033[0m" << endl;
+        cout << "Total weight: \033[33m   \t" << MST.first << "\033[0m" << endl;
+
     }
 
-    void printMST() const {
-        for (const auto& edge : MST) {
-            std::cout << edge.u << " -- " << edge.v << " : " << edge.weight << "\n";
-        }
+    gEdge getMST() { return MST; }
+    Dlist<Edge> getGraph() const { return graph; }
+
+    uint64_t getEdges() { return eCount; }
+    uint64_t getNodes() { return nCount; }
+
+    //void printMST() const 
+    //{
+    //    for (auto& edge : MST.second) 
+    //    {
+    //        std::cout << edge.u << " -- " << edge.v << " : " << edge.weight << "\n";
+    //    }
+    //}
+
+    void handleTime(steady_clock::time_point start)
+    {
+        auto stop = high_resolution_clock::now();
+        auto duration = duration_cast<microseconds>(stop - start);
+
+        cout << "\033[33m \tElapsed time: " << duration.count() << "us\033[0m" << endl;
+
     }
 };
 
