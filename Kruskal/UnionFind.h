@@ -2,27 +2,45 @@
 #define UNIONFIND
 #ifdef UNIONFIND
 
-#include <vector>
+#include "Dlist.h"
 #include "Edge.h"
 
 using namespace std;
 
 class UnionFind {
 private:
-    vector<int> parent, rank;
+    Dlist<int> parent, rank;
+    bool useCompr, useRank;
+    uint64_t findCounter = 0;
 
 public:
-    UnionFind(int nCount) : parent(nCount), rank(nCount, 0)
+    UnionFind(int nCount) : parent(nCount), rank(nCount, 0), useCompr(true), useRank(true)
     {
         for (int i = 0; i < nCount; i++)
             parent[i] = i;
     }
+    ~UnionFind()
+    {
+        findCounter = 0;
+    }
+
+    uint64_t getFinds() { return findCounter; }
+
+    void settings(bool useCompression, bool useRanking)
+    {
+        this->useCompr = useCompression;
+        this->useRank = useRanking;
+    }
 
     int find(int node) 
     {
-        if (parent[node] != node) 
+        findCounter++;
+        if (parent[node] != node && useCompr)
             parent[node] = find(parent[node]);
 
+        else if (parent[node] != node)
+            parent[node] = node;
+        
         return parent[node];
     }
 
@@ -30,6 +48,12 @@ public:
     {
         int rootU = find(nodeU);
         int rootV = find(nodeV);
+
+        if (!useRank)
+        {
+            parent[rootU] = rootV;
+            return;
+        }
 
         if (rootU != rootV) 
         {
